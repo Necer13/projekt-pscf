@@ -1,0 +1,18 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <EditTextPreference
+        android:key="username"
+        android:summary="No username set"
+        android:title="Username" />
+    <ListPreference
+        android:key="app_theme"
+        android:title="App theme"
+        android:summary="Choose app theme"
+        android:defaultValue="system"
+        android:entries="@array/theme_options"
+        android:entryValues="@array/theme_values" />
+    <Preference
+        android:key="advanced_settings"
+        android:title="Advanced settings"
+        android:summary="Password required" />
+</PreferenceScreen>

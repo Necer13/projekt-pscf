@@ -22,4 +22,10 @@
         android:name="pl.polsl.simon_go_manager.ui.settings.SettingsFragment"
         android:label="@string/title_settings"
         tools:layout="@layout/fragment_settings" />
+    <fragment
+        android:id="@+id/advancedSettingsFragment"
+        android:name="pl.polsl.simon_go_manager.ui.settings.AdvancedSettingsFragment"
+        android:label="Advanced settings"
+        tools:layout="@layout/fragment_advanced_settings" />
+
 </navigation>
