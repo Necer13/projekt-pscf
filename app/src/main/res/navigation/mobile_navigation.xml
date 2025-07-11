@@ -27,5 +27,10 @@
         android:name="pl.polsl.simon_go_manager.ui.settings.AdvancedSettingsFragment"
         android:label="Advanced settings"
         tools:layout="@layout/fragment_advanced_settings" />
+    <fragment
+        android:id="@+id/navigation_gesture"
+        android:name="pl.polsl.simon_go_manager.ui.gesture.GestureRecognitionFragment"
+        android:label="Gesty"
+        tools:layout="@layout/fragment_gesture_recognition" />
 
 </navigation>
