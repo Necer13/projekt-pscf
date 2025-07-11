@@ -1,33 +1,51 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
+    xmlns:tools="http://schemas.android.com/tools"
     android:padding="16dp"
     android:layout_marginBottom="8dp"
-    android:background="?android:attr/selectableItemBackground"> <!-- Optional: for touch feedback -->
+    android:background="?android:attr/selectableItemBackground">
 
-    <TextView
-        android:id="@+id/textViewDeviceName"
+    <LinearLayout
+        android:id="@+id/textContainer"
+        android:orientation="vertical"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        tools:text="Living Room Thermostat" />
+        android:layout_alignParentStart="true"
+        android:layout_toStartOf="@+id/buttonDeleteDevice"
+        android:layout_centerVertical="true">
 
-    <TextView
-        android:id="@+id/textViewDeviceType"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="14sp"
-        tools:text="Type: TERMOSTAT" />
+        <TextView
+            android:id="@+id/textViewDeviceName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            tools:text="Living Room Thermostat" />
 
-    <TextView
-        android:id="@+id/textViewDeviceIp"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="14sp"
-        tools:text="IP: 192.168.1.100" />
+        <TextView
+            android:id="@+id/textViewDeviceType"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            tools:text="Type: TERMOSTAT" />
 
-</LinearLayout>
+        <TextView
+            android:id="@+id/textViewDeviceIp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="14sp"
+            tools:text="IP: 192.168.1.100" />
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/buttonDeleteDevice"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_alignParentEnd="true"
+        android:layout_centerVertical="true"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Usuń urządzenie"
+        android:src="@android:drawable/ic_delete" />
+
+</RelativeLayout>

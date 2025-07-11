@@ -2,7 +2,7 @@ package pl.polsl.simon_go_manager.ui.devices
 
 data class Device(
     val name: String,
-    val type: DeviceType, // Using an enum for type safety
+    val type: DeviceType,
     val ipAddress: String
 )
 

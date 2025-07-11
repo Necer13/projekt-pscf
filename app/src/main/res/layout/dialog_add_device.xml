@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/deviceNameInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Nazwa urządzenia"
+        android:inputType="text" />
+
+    <EditText
+        android:id="@+id/deviceIpInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Adres IP (np. 192.168.1.100)"
+        android:inputType="text" />
+
+    <Spinner
+        android:id="@+id/deviceTypeSpinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"/>
+</LinearLayout>
