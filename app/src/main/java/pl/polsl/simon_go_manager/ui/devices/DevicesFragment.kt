@@ -77,7 +77,13 @@ class DevicesFragment : Fragment() {
 
                 try {
                     val type = DeviceType.valueOf(typeName)
-                    val newDevice = Device(name, type, ip)
+                    val defaultValue: Any = when (type.toString().lowercase()) {
+                        "switch" -> false
+                        "dimmer" -> 0
+                        "thermostat" -> 20.0
+                        else -> ""
+                    }
+                    val newDevice = Device(name, type, ip, defaultValue)
                     addNewDevice(newDevice)
                     Toast.makeText(requireContext(), "Dodano: $name", Toast.LENGTH_SHORT).show()
                 } catch (e: Exception) {
@@ -89,8 +95,9 @@ class DevicesFragment : Fragment() {
     }
 
     private fun addNewDevice(device: Device) {
+
         deviceList.add(device)
-        DeviceStorage.saveDevices(requireContext(), deviceList) // zapisz!
+        DeviceStorage.saveDevices(requireContext(), deviceList)
         displayDevices()
     }
 
@@ -109,7 +116,6 @@ class DevicesFragment : Fragment() {
                 Toast.makeText(requireContext(), "Kliknięto: ${device.name}", Toast.LENGTH_SHORT).show()
             }
 
-            // Obsługa przycisku usuwania
             itemBinding.buttonDeleteDevice.setOnClickListener {
                 androidx.appcompat.app.AlertDialog.Builder(requireContext())
                     .setTitle("Usuń urządzenie")
