@@ -21,6 +21,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.Navigation
+import androidx.navigation.activity
 import com.google.mediapipe.tasks.core.Delegate
 import pl.polsl.simon_go_manager.HandLandmarkerHelper
 import pl.polsl.simon_go_manager.ui.gesture.CameraViewModel
@@ -28,6 +29,10 @@ import pl.polsl.simon_go_manager.R
 import pl.polsl.simon_go_manager.PermissionsFragment
 import pl.polsl.simon_go_manager.databinding.FragmentGestureRecognitionBinding
 import com.google.mediapipe.tasks.vision.core.RunningMode
+import pl.polsl.simon_go_manager.Gesture
+import pl.polsl.simon_go_manager.GestureRecognizer
+import pl.polsl.simon_go_manager.ThumbsUpGesture
+import java.util.Collections
 import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -37,6 +42,11 @@ class GestureRecognitionFragment : Fragment(), HandLandmarkerHelper.LandmarkerLi
 
     companion object {
         private const val TAG = "Hand Landmarker"
+        // --- Stability Thresholds ---
+        // Number of consecutive frames a gesture needs to be present to be confirmed
+        private const val GESTURE_CONFIRMATION_THRESHOLD = 3
+        // Number of consecutive frames a gesture needs to be absent to be confirmed lost
+        private const val GESTURE_LOST_THRESHOLD = 5
     }
 
     private var _fragmentCameraBinding: FragmentGestureRecognitionBinding? = null
@@ -54,6 +64,18 @@ class GestureRecognitionFragment : Fragment(), HandLandmarkerHelper.LandmarkerLi
 
     /** Blocking ML operations are performed using this executor */
     private lateinit var backgroundExecutor: ExecutorService
+
+    private lateinit var gestureRecognizer: GestureRecognizer
+
+    // Stores the current confirmed active gestures
+    private val confirmedActiveGestures = mutableSetOf<String>()
+
+    // Tracks potential gestures and their stability counts for activation
+    private val potentialActivationCounts = mutableMapOf<String, Int>()
+
+    // Tracks active gestures and their stability counts for deactivation
+    private val potentialDeactivationCounts = mutableMapOf<String, Int>()
+
 
     override fun onResume() {
         super.onResume()
@@ -136,6 +158,13 @@ class GestureRecognitionFragment : Fragment(), HandLandmarkerHelper.LandmarkerLi
                 handLandmarkerHelperListener = this
             )
         }
+
+        // Initialize GestureRecognizer with the gestures you want to detect
+        val supportedGestures = listOf(
+            ThumbsUpGesture()
+            // Add more gestures here: e.g., VSignGesture(), ThumbsDownGesture()
+        )
+        gestureRecognizer = GestureRecognizer(supportedGestures)
 
         // Attach listeners to UI control widgets
         //initBottomSheetControls()
@@ -223,24 +252,83 @@ class GestureRecognitionFragment : Fragment(), HandLandmarkerHelper.LandmarkerLi
     // Update UI after hand have been detected. Extracts original
     // image height/width to scale and place the landmarks properly through
     // OverlayView
-    override fun onResults(
-        resultBundle: HandLandmarkerHelper.ResultBundle
-    ) {
+    override fun onResults(resultBundle: HandLandmarkerHelper.ResultBundle) {
         activity?.runOnUiThread {
-            if (_fragmentCameraBinding != null) {
+            if (_fragmentCameraBinding == null) return@runOnUiThread
 
-
-                // Pass necessary information to OverlayView for drawing on the canvas
-                fragmentCameraBinding.overlay.setResults(
-                    resultBundle.results.first(),
-                    resultBundle.inputImageHeight,
-                    resultBundle.inputImageWidth,
-                    RunningMode.LIVE_STREAM
-                )
-
-                // Force a redraw
-                fragmentCameraBinding.overlay.invalidate()
+            val handLandmarkerResult = resultBundle.results.firstOrNull()
+            val gesturesRecognizedThisFrame = if (handLandmarkerResult != null) {
+                gestureRecognizer.recognizeGestures(handLandmarkerResult).map { it.name }.toSet()
+            } else {
+                emptySet()
             }
+
+            Log.d(TAG, "Frame - Recognized: ${gesturesRecognizedThisFrame.joinToString()}, Confirmed: ${confirmedActiveGestures.joinToString()}")
+
+            // --- Process for Activation ---
+            for (gestureName in gesturesRecognizedThisFrame) {
+                if (gestureName !in confirmedActiveGestures) { // Only consider if not already confirmed
+                    val currentCount = potentialActivationCounts.getOrDefault(gestureName, 0) + 1
+                    potentialActivationCounts[gestureName] = currentCount
+                    potentialDeactivationCounts.remove(gestureName) // Reset deactivation count if seen again
+
+                    if (currentCount >= GESTURE_CONFIRMATION_THRESHOLD) {
+                        if (confirmedActiveGestures.add(gestureName)) { // .add() returns true if added
+                            Log.i(TAG, "Gesture Activated (Confirmed): $gestureName")
+                            Toast.makeText(requireContext(), "Activated: $gestureName", Toast.LENGTH_SHORT).show()
+                            // --- YOUR ACTION FOR CONFIRMED NEW GESTURE GOES HERE ---
+                        }
+                        potentialActivationCounts.remove(gestureName) // Reset count after confirmation
+                    }
+                } else {
+                    // If it's already confirmed, ensure its potential deactivation count is reset
+                    potentialDeactivationCounts.remove(gestureName)
+                    // And ensure it's not in potential activation queue
+                    potentialActivationCounts.remove(gestureName)
+                }
+            }
+
+            // --- Process for Deactivation ---
+            val gesturesNoLongerSeenThisFrame = confirmedActiveGestures - gesturesRecognizedThisFrame
+            for (gestureName in gesturesNoLongerSeenThisFrame) {
+                val currentCount = potentialDeactivationCounts.getOrDefault(gestureName, 0) + 1
+                potentialDeactivationCounts[gestureName] = currentCount
+                // Do NOT reset potentialActivationCounts here, as it might just be a flicker
+
+                if (currentCount >= GESTURE_LOST_THRESHOLD) {
+                    if (confirmedActiveGestures.remove(gestureName)) { // .remove() returns true if removed
+                        Log.i(TAG, "Gesture Deactivated (Confirmed): $gestureName")
+                        // --- YOUR ACTION FOR CONFIRMED LOST GESTURE GOES HERE (OPTIONAL) ---
+                    }
+                    potentialDeactivationCounts.remove(gestureName) // Reset count after confirmation
+                }
+            }
+
+            // --- Cleanup potential activation counts for gestures not seen this frame ---
+            val gesturesToRemoveFromPotentialActivation = potentialActivationCounts.keys - gesturesRecognizedThisFrame
+            for(gestureName in gesturesToRemoveFromPotentialActivation) {
+                potentialActivationCounts.remove(gestureName)
+            }
+
+
+            // --- UI Update (displaying only confirmed active gestures) ---
+            if (confirmedActiveGestures.isNotEmpty()) {
+                // fragmentCameraBinding.gestureTextView.text = "Active: ${confirmedActiveGestures.joinToString()}"
+            } else {
+                // fragmentCameraBinding.gestureTextView.text = ""
+            }
+            // Determine if ANY gesture is currently confirmed active
+            val isAnyGestureConfirmedActive = confirmedActiveGestures.isNotEmpty()
+
+            // Pass necessary information to OverlayView, including the gesture active state
+            fragmentCameraBinding.overlay.setResults(
+                resultBundle.results.first(),
+                resultBundle.inputImageHeight,
+                resultBundle.inputImageWidth,
+                RunningMode.LIVE_STREAM,
+                isGestureCurrentlyActive = isAnyGestureConfirmedActive // Pass the state here
+            )
+            //fragmentCameraBinding.overlay.invalidate()
         }
     }
 

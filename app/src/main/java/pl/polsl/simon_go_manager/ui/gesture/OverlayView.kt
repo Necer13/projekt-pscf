@@ -33,39 +33,61 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
     View(context, attrs) {
 
     private var results: HandLandmarkerResult? = null
-    private var linePaint = Paint()
-    private var pointPaint = Paint()
+    //private var linePaint = Paint()
+    //private var pointPaint = Paint()
 
     private var scaleFactor: Float = 1f
     private var imageWidth: Int = 1
     private var imageHeight: Int = 1
 
-    init {
-        initPaints()
+    private val defaultLandmarkColor = Color.YELLOW
+    private val defaultConnectionColor = Color.GREEN
+    private val gestureActiveLandmarkColor = Color.CYAN // Example: Cyan for active gesture landmarks
+    private val gestureActiveConnectionColor = Color.MAGENTA // Example: Magenta for active gesture connections
+
+    private var isGestureActive: Boolean = false // New state variable
+
+    private var pointPaint = Paint().apply {
+        color = defaultLandmarkColor
+        strokeWidth = LANDMARK_STROKE_WIDTH
+        style = Paint.Style.FILL
     }
+
+    private var linePaint = Paint().apply {
+        color = defaultConnectionColor
+        strokeWidth = LANDMARK_STROKE_WIDTH
+        style = Paint.Style.STROKE
+    }
+
+//    init {
+//        initPaints()
+//    }
 
     fun clear() {
         results = null
-        linePaint.reset()
-        pointPaint.reset()
+        //linePaint.reset()
+        //pointPaint.reset()
         invalidate()
-        initPaints()
+        //initPaints()
     }
 
-    private fun initPaints() {
-        linePaint.color =
-            ContextCompat.getColor(context!!, R.color.purple_200)
-        linePaint.strokeWidth = LANDMARK_STROKE_WIDTH
-        linePaint.style = Paint.Style.STROKE
-
-        pointPaint.color = Color.YELLOW
-        pointPaint.strokeWidth = LANDMARK_STROKE_WIDTH
-        pointPaint.style = Paint.Style.FILL
-    }
+//    private fun initPaints() {
+//        linePaint.color = defaultConnectionColor
+//        linePaint.strokeWidth = LANDMARK_STROKE_WIDTH
+//        linePaint.style = Paint.Style.STROKE
+//
+//        pointPaint.color =  defaultLandmarkColor
+//        pointPaint.strokeWidth = LANDMARK_STROKE_WIDTH
+//        pointPaint.style = Paint.Style.FILL
+//    }
 
     override fun draw(canvas: Canvas) {
         super.draw(canvas)
         results?.let { handLandmarkerResult ->
+
+            linePaint.color = if (isGestureActive) gestureActiveConnectionColor else defaultConnectionColor
+            pointPaint.color =  if (isGestureActive) gestureActiveLandmarkColor else defaultLandmarkColor
+
             for (landmark in handLandmarkerResult.landmarks()) {
                 for (normalizedLandmark in landmark) {
                     canvas.drawPoint(
@@ -96,12 +118,14 @@ class OverlayView(context: Context?, attrs: AttributeSet?) :
         handLandmarkerResults: HandLandmarkerResult,
         imageHeight: Int,
         imageWidth: Int,
-        runningMode: RunningMode = RunningMode.IMAGE
+        runningMode: RunningMode = RunningMode.IMAGE,
+        isGestureCurrentlyActive: Boolean = false
     ) {
         results = handLandmarkerResults
 
         this.imageHeight = imageHeight
         this.imageWidth = imageWidth
+        this.isGestureActive = isGestureCurrentlyActive
 
         scaleFactor = when (runningMode) {
             RunningMode.IMAGE,
