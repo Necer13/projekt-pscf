@@ -16,6 +16,7 @@ preferenceKtx = "1.2.1"
 cameraLifecycle = "1.4.2"
 cameraCore = "1.4.2"
 cameraView = "1.4.2"
+supportAnnotations = "28.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -33,6 +34,7 @@ androidx-preference-ktx = { group = "androidx.preference", name = "preference-kt
 androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "cameraLifecycle" }
 androidx-camera-core = { group = "androidx.camera", name = "camera-core", version.ref = "cameraCore" }
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "cameraView" }
+support-annotations = { group = "com.android.support", name = "support-annotations", version.ref = "supportAnnotations" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

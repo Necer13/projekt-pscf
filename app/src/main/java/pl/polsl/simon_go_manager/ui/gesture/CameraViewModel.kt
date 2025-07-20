@@ -2,21 +2,21 @@
 package pl.polsl.simon_go_manager.ui.gesture
 
 import androidx.lifecycle.ViewModel
-import pl.polsl.simon_go_manager.HandLandmarkerHelper
+import pl.polsl.simon_go_manager.GestureRecognizerHelper
 
 /**
  *  This ViewModel is used to store hand landmarker helper settings
  */
 class CameraViewModel : ViewModel() {
 
-    private var _delegate: Int = HandLandmarkerHelper.DELEGATE_CPU
+    private var _delegate: Int = GestureRecognizerHelper.DELEGATE_CPU
     private var _minHandDetectionConfidence: Float =
-        HandLandmarkerHelper.DEFAULT_HAND_DETECTION_CONFIDENCE
-    private var _minHandTrackingConfidence: Float = HandLandmarkerHelper
+        GestureRecognizerHelper.DEFAULT_HAND_DETECTION_CONFIDENCE
+    private var _minHandTrackingConfidence: Float = GestureRecognizerHelper
         .DEFAULT_HAND_TRACKING_CONFIDENCE
-    private var _minHandPresenceConfidence: Float = HandLandmarkerHelper
+    private var _minHandPresenceConfidence: Float = GestureRecognizerHelper
         .DEFAULT_HAND_PRESENCE_CONFIDENCE
-    private var _maxHands: Int = HandLandmarkerHelper.DEFAULT_NUM_HANDS
+    //private var _maxHands: Int = GestureRecognizerHelper.DEFAULT_NUM_HANDS
 
     val currentDelegate: Int get() = _delegate
     val currentMinHandDetectionConfidence: Float
@@ -28,7 +28,7 @@ class CameraViewModel : ViewModel() {
     val currentMinHandPresenceConfidence: Float
         get() =
             _minHandPresenceConfidence
-    val currentMaxHands: Int get() = _maxHands
+    //val currentMaxHands: Int get() = _maxHands
 
     fun setDelegate(delegate: Int) {
         _delegate = delegate
@@ -44,7 +44,7 @@ class CameraViewModel : ViewModel() {
         _minHandPresenceConfidence = confidence
     }
 
-    fun setMaxHands(maxResults: Int) {
-        _maxHands = maxResults
-    }
+//    fun setMaxHands(maxResults: Int) {
+//        _maxHands = maxResults
+//    }
 }

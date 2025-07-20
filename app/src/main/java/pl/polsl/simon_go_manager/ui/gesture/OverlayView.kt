@@ -23,8 +23,8 @@ import android.util.AttributeSet
 import android.view.View
 import androidx.core.content.ContextCompat
 import com.google.mediapipe.tasks.vision.core.RunningMode
+import com.google.mediapipe.tasks.vision.gesturerecognizer.GestureRecognizerResult
 import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarker
-import com.google.mediapipe.tasks.vision.handlandmarker.HandLandmarkerResult
 import pl.polsl.simon_go_manager.R
 import kotlin.math.max
 import kotlin.math.min
@@ -32,100 +32,70 @@ import kotlin.math.min
 class OverlayView(context: Context?, attrs: AttributeSet?) :
     View(context, attrs) {
 
-    private var results: HandLandmarkerResult? = null
-    //private var linePaint = Paint()
-    //private var pointPaint = Paint()
+    private var results: GestureRecognizerResult? = null
+    private var linePaint = Paint()
+    private var pointPaint = Paint()
 
     private var scaleFactor: Float = 1f
     private var imageWidth: Int = 1
     private var imageHeight: Int = 1
 
-    private val defaultLandmarkColor = Color.YELLOW
-    private val defaultConnectionColor = Color.GREEN
-    private val gestureActiveLandmarkColor = Color.CYAN // Example: Cyan for active gesture landmarks
-    private val gestureActiveConnectionColor = Color.MAGENTA // Example: Magenta for active gesture connections
-
-    private var isGestureActive: Boolean = false // New state variable
-
-    private var pointPaint = Paint().apply {
-        color = defaultLandmarkColor
-        strokeWidth = LANDMARK_STROKE_WIDTH
-        style = Paint.Style.FILL
+    init {
+        initPaints()
     }
-
-    private var linePaint = Paint().apply {
-        color = defaultConnectionColor
-        strokeWidth = LANDMARK_STROKE_WIDTH
-        style = Paint.Style.STROKE
-    }
-
-//    init {
-//        initPaints()
-//    }
 
     fun clear() {
         results = null
-        //linePaint.reset()
-        //pointPaint.reset()
+        linePaint.reset()
+        pointPaint.reset()
         invalidate()
-        //initPaints()
+        initPaints()
     }
 
-//    private fun initPaints() {
-//        linePaint.color = defaultConnectionColor
-//        linePaint.strokeWidth = LANDMARK_STROKE_WIDTH
-//        linePaint.style = Paint.Style.STROKE
-//
-//        pointPaint.color =  defaultLandmarkColor
-//        pointPaint.strokeWidth = LANDMARK_STROKE_WIDTH
-//        pointPaint.style = Paint.Style.FILL
-//    }
+    private fun initPaints() {
+        linePaint.color =
+            ContextCompat.getColor(context!!, R.color.purple_200)
+        linePaint.strokeWidth = LANDMARK_STROKE_WIDTH
+        linePaint.style = Paint.Style.STROKE
+
+        pointPaint.color = Color.YELLOW
+        pointPaint.strokeWidth = LANDMARK_STROKE_WIDTH
+        pointPaint.style = Paint.Style.FILL
+    }
 
     override fun draw(canvas: Canvas) {
         super.draw(canvas)
-        results?.let { handLandmarkerResult ->
-
-            linePaint.color = if (isGestureActive) gestureActiveConnectionColor else defaultConnectionColor
-            pointPaint.color =  if (isGestureActive) gestureActiveLandmarkColor else defaultLandmarkColor
-
-            for (landmark in handLandmarkerResult.landmarks()) {
-                for (normalizedLandmark in landmark) {
+        results?.let { gestureRecognizerResult ->
+            for(landmark in gestureRecognizerResult.landmarks()) {
+                for(normalizedLandmark in landmark) {
                     canvas.drawPoint(
                         normalizedLandmark.x() * imageWidth * scaleFactor,
                         normalizedLandmark.y() * imageHeight * scaleFactor,
-                        pointPaint
-                    )
+                        pointPaint)
                 }
 
                 HandLandmarker.HAND_CONNECTIONS.forEach {
                     canvas.drawLine(
-                        landmark.get(it!!.start())
-                            .x() * imageWidth * scaleFactor,
-                        landmark.get(it.start())
-                            .y() * imageHeight * scaleFactor,
-                        landmark.get(it.end())
-                            .x() * imageWidth * scaleFactor,
-                        landmark.get(it.end())
-                            .y() * imageHeight * scaleFactor,
-                        linePaint
-                    )
+                        gestureRecognizerResult.landmarks().get(0).get(it!!.start()).x() * imageWidth * scaleFactor,
+                        gestureRecognizerResult.landmarks().get(0).get(it.start()).y() * imageHeight * scaleFactor,
+                        gestureRecognizerResult.landmarks().get(0).get(it.end()).x() * imageWidth * scaleFactor,
+                        gestureRecognizerResult.landmarks().get(0).get(it.end()).y() * imageHeight * scaleFactor,
+                        linePaint)
                 }
             }
         }
     }
 
     fun setResults(
-        handLandmarkerResults: HandLandmarkerResult,
+        gestureRecognizerResult: GestureRecognizerResult,
         imageHeight: Int,
         imageWidth: Int,
-        runningMode: RunningMode = RunningMode.IMAGE,
-        isGestureCurrentlyActive: Boolean = false
+        runningMode: RunningMode = RunningMode.IMAGE
     ) {
-        results = handLandmarkerResults
+        results = gestureRecognizerResult
 
         this.imageHeight = imageHeight
         this.imageWidth = imageWidth
-        this.isGestureActive = isGestureCurrentlyActive
 
         scaleFactor = when (runningMode) {
             RunningMode.IMAGE,

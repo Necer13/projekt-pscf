@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/gestureFragmentLayout"
@@ -11,23 +12,45 @@
         android:id="@+id/previewView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:scaleType="fillStart"/>
+        app:scaleType="fillStart">
+
+
+    </androidx.camera.view.PreviewView>
 
     <pl.polsl.simon_go_manager.ui.gesture.OverlayView
         android:id="@+id/overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <TextView
-        android:id="@+id/textGestureResult"
-        android:layout_width="wrap_content"
+
+    <LinearLayout
+        android:id="@+id/gestureResultBar"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="Oczekiwanie na gest..."
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:textColor="@android:color/white"
-        android:layout_gravity="center"
+        android:orientation="horizontal"
         android:background="@android:color/black"
         android:padding="8dp"
-        android:alpha="0.7"/>
-</FrameLayout>
+        app:layout_constraintBottom_toBottomOf="@id/nav_view"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        tools:ignore="NotSibling">
+
+        <TextView
+            android:id="@+id/text_label"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="Gest: "
+            android:textColor="@android:color/white"
+            android:textSize="18sp" />
+
+        <TextView
+            android:id="@+id/text_score"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0.00"
+            android:textColor="@android:color/white"
+            android:textSize="18sp" />
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
