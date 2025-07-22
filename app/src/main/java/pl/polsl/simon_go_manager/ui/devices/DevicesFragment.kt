@@ -43,6 +43,17 @@ class DevicesFragment : Fragment() {
         }
 
         deviceList = DeviceStorage.loadDevices(requireContext())
+        val hardcodedDevice = Device(
+            name = "Ściemniacz",
+            type = DeviceType.DIMMER,
+            ipAddress = "192.168.1.111",
+            value = false
+        )
+
+        if (deviceList.none { it.name == hardcodedDevice.name && it.ipAddress == hardcodedDevice.ipAddress }) {
+            deviceList.add(hardcodedDevice)
+            DeviceStorage.saveDevices(requireContext(), deviceList)
+        }
         displayDevices()
     }
 
@@ -52,7 +63,7 @@ class DevicesFragment : Fragment() {
         val ipInput = dialogView.findViewById<EditText>(R.id.deviceIpInput)
         val typeSpinner = dialogView.findViewById<Spinner>(R.id.deviceTypeSpinner)
 
-        val deviceTypes = DeviceType.values().map { it.name }
+        val deviceTypes = DeviceType.entries.map { it.name }
         val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, deviceTypes)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         typeSpinner.adapter = adapter

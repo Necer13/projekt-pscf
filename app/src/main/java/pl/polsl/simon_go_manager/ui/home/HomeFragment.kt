@@ -1,5 +1,3 @@
-package pl.polsl.simon_go_manager.ui.home
-
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -10,6 +8,7 @@ import pl.polsl.simon_go_manager.databinding.FragmentHomeBinding
 import pl.polsl.simon_go_manager.ui.devices.Device
 import pl.polsl.simon_go_manager.ui.devices.DeviceType
 import pl.polsl.simon_go_manager.utils.DeviceStorage
+import pl.polsl.simon_go_manager.utils.SimonGoApi
 
 class HomeFragment : Fragment() {
 
@@ -28,16 +27,13 @@ class HomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        // Załaduj urządzenia
         deviceList = DeviceStorage.loadDevices(requireContext())
         displayControls()
     }
 
     private fun displayControls() {
         binding.controlsContainer.removeAllViews()
-
-        val inflater = LayoutInflater.from(requireContext())
+        LayoutInflater.from(requireContext())
 
         for (device in deviceList) {
             val deviceLayout = LinearLayout(requireContext())
@@ -56,6 +52,7 @@ class HomeFragment : Fragment() {
                     switch.setOnCheckedChangeListener { _, isChecked ->
                         device.value = isChecked
                         DeviceStorage.saveDevices(requireContext(), deviceList)
+                        sendCommandToDevice(device, if (isChecked) "on" else "off")
                         Toast.makeText(requireContext(), "${device.name} set to $isChecked", Toast.LENGTH_SHORT).show()
                     }
                     deviceLayout.addView(switch)
@@ -74,9 +71,11 @@ class HomeFragment : Fragment() {
 
                         override fun onStartTrackingTouch(seekBar: SeekBar?) {}
                         override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                            device.value = seekBar?.progress ?: 0
+                            val brightness = seekBar?.progress ?: 0
+                            device.value = brightness
                             DeviceStorage.saveDevices(requireContext(), deviceList)
-                            Toast.makeText(requireContext(), "${device.name} brightness set to ${device.value}", Toast.LENGTH_SHORT).show()
+                            sendCommandToDevice(device, "brightness/$brightness")
+                            Toast.makeText(requireContext(), "${device.name} brightness set to $brightness", Toast.LENGTH_SHORT).show()
                         }
                     })
 
@@ -85,22 +84,23 @@ class HomeFragment : Fragment() {
                 }
                 DeviceType.THERMOSTAT -> {
                     val seekBar = SeekBar(requireContext())
-                    seekBar.max = 30  // Max temp 30°C
-                    seekBar.min = 10  // Min temp 10°C (API 26+)
-                    seekBar.progress = ((device.value as? Double)?.toInt() ?: 20) - 10
+                    seekBar.max = 30
+                    seekBar.min = 10
+                    seekBar.progress = ((device.value as? Double)?.toInt() ?: 20)
                     val valueText = TextView(requireContext())
-                    valueText.text = "Temperature: ${seekBar.progress + 10}°C"
+                    valueText.text = "Temperature: ${seekBar.progress}°C"
 
                     seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
                         override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                            valueText.text = "Temperature: ${progress + 10}°C"
+                            valueText.text = "Temperature: $progress°C"
                         }
 
                         override fun onStartTrackingTouch(seekBar: SeekBar?) {}
                         override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                            val temp = (seekBar?.progress ?: 10) + 10
+                            val temp = seekBar?.progress ?: 20
                             device.value = temp.toDouble()
                             DeviceStorage.saveDevices(requireContext(), deviceList)
+                            sendCommandToDevice(device, "temperature/$temp")
                             Toast.makeText(requireContext(), "${device.name} temperature set to $temp°C", Toast.LENGTH_SHORT).show()
                         }
                     })
@@ -108,14 +108,22 @@ class HomeFragment : Fragment() {
                     deviceLayout.addView(valueText)
                     deviceLayout.addView(seekBar)
                 }
-                else -> {
-                    val info = TextView(requireContext())
-                    info.text = "Brak obsługi dla tego typu urządzenia."
-                    deviceLayout.addView(info)
-                }
             }
 
             binding.controlsContainer.addView(deviceLayout)
+        }
+    }
+
+    private fun sendCommandToDevice(device: Device, endpoint: String) {
+        // Zakładamy, że device.ip istnieje — jeśli nie, zmień na odpowiednie pole
+        val ip = device.ipAddress
+        if (ip.isBlank()) {
+            Toast.makeText(requireContext(), "Brak IP dla urządzenia ${device.name}", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        SimonGoApi.sendCommand(ip, endpoint) { success, message ->
+            Toast.makeText(requireContext(), message ?: "Brak odpowiedzi", Toast.LENGTH_SHORT).show()
         }
     }
 

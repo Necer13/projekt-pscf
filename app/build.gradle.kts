@@ -52,19 +52,21 @@ dependencies {
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
     implementation(libs.androidx.preference.ktx)
-    implementation("androidx.camera:camera-core:1.2.3")
-    implementation("androidx.camera:camera-camera2:1.2.3")
-    implementation("androidx.camera:camera-lifecycle:1.2.3")
-    implementation("androidx.camera:camera-view:1.2.3")
-    implementation("com.google.code.gson:gson:2.10.1")
+    implementation(libs.androidx.camera.core.v123)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle.v123)
+    implementation(libs.androidx.camera.view.v123)
+    implementation(libs.gson)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.view)
     implementation(libs.support.annotations)
+    implementation(libs.tasks.vision)
+    implementation(libs.okhttp)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
     // MediaPipe Library
-    implementation("com.google.mediapipe:tasks-vision:0.10.26")
+
 }

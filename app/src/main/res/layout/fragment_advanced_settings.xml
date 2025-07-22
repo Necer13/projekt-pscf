@@ -1,42 +1,39 @@
-<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/advanced_settings_root"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:layout_height="match_parent">
 
-    <ScrollView
+    <LinearLayout
+        android:orientation="vertical"
+        android:padding="16dp"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content">
 
-        <LinearLayout
+        <EditText
+            android:id="@+id/deviceIpInput"
+            android:hint="Adres IP urządzenia"
+            android:inputType="text"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_height="wrap_content"/>
 
-            <!-- Add your views here -->
-            <TextView
-                android:id="@+id/example_textview"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Configuration"
-                android:layout_marginBottom="8dp"/>
+        <EditText
+            android:id="@+id/gestureInput"
+            android:hint="Gest (np. swipe_up)"
+            android:inputType="text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
 
-            <Button
-                android:id="@+id/export_config_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Export configuration"/>
-            <Button
-                android:id="@+id/import_config_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Import configuration"/>
+        <EditText
+            android:id="@+id/actionInput"
+            android:hint="Akcja (np. toggle_light)"
+            android:inputType="text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"/>
 
-            <!-- You can add more views as needed -->
+        <Button
+            android:id="@+id/saveButton"
+            android:text="Zapisz"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
 
-        </LinearLayout>
-    </ScrollView>
-
-</LinearLayout>
+    </LinearLayout>
+</ScrollView>
