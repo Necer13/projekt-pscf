@@ -183,70 +183,53 @@ class GestureRecognitionFragment : Fragment(),
         })
     }
 
+    private var lastCommandTime = 0L
+    private val COMMAND_COOLDOWN_MS = 1000L
+
     override fun onResults(resultBundle: GestureRecognizerHelper.ResultBundle) {
         activity?.runOnUiThread {
             if (_binding != null) {
                 val gestures = resultBundle.results.first().gestures()
                 val category = gestures.firstOrNull()?.maxByOrNull { it.score() }
 
-                if (category != null) {
-                    binding.textLabel.text = category.categoryName()
-                    when (category.categoryName()) {
-                        "Thumb_Up" -> {
-                            sendCommand("/s/1")
-                            Toast.makeText(
-                                requireContext(),
-                                "Włącz oba przekaźniki",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
+                category?.let {
+                    val currentTime = System.currentTimeMillis()
+                    if (currentTime - lastCommandTime >= COMMAND_COOLDOWN_MS) {
+                        lastCommandTime = currentTime
 
-                        "Thumb_Down" -> {
-                            sendCommand("/s/0")
-                            Toast.makeText(
-                                requireContext(),
-                                "Wyłącz oba przekaźniki",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                        binding.textLabel.text = it.categoryName()
+                        when (it.categoryName()) {
+                            "Thumb_Up" -> {
+                                sendCommand("/s/1")
+                                Toast.makeText(binding.root.context, "Włącz oba przekaźniki", Toast.LENGTH_SHORT).show()
+                            }
+                            "Thumb_Down" -> {
+                                sendCommand("/s/0")
+                                Toast.makeText(binding.root.context, "Wyłącz oba przekaźniki", Toast.LENGTH_SHORT).show()
+                            }
+                            "Victory" -> {
+                                sendCommand("/s/2")
+                                Toast.makeText(binding.root.context, "Zmień stan obu przekaźników", Toast.LENGTH_SHORT).show()
+                            }
+                            "Closed_Fist" -> {
+                                sendCommand("/s/dec/14")
+                                Toast.makeText(binding.root.context, "Jasność -20", Toast.LENGTH_SHORT).show()
+                            }
+                            "Pointing_Up" -> {
+                                sendCommand("/s/t/inc/0A")
+                                Toast.makeText(binding.root.context, "Temperatura +10", Toast.LENGTH_SHORT).show()
+                            }
+                            "Pointing_Down" -> {
+                                sendCommand("/s/t/dec/0A")
+                                Toast.makeText(binding.root.context, "Temperatura -10", Toast.LENGTH_SHORT).show()
+                            }
+                            else -> {
+                                Toast.makeText(binding.root.context, "Nieznany gest: ${it.categoryName()}", Toast.LENGTH_SHORT).show()
+                            }
                         }
-
-                        "Victory" -> {
-                            sendCommand("/s/2")
-                            Toast.makeText(
-                                requireContext(),
-                                "Zmień stan obu przekaźników",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-
-                        "Closed_Fist" -> {
-                            sendCommand("/s/dec/14")
-                            Toast.makeText(requireContext(), "Jasność -20", Toast.LENGTH_SHORT)
-                                .show()
-                        }
-
-                        "Pointing_Up" -> {
-                            sendCommand("/s/t/inc/0A")
-                            Toast.makeText(requireContext(), "Temperatura +10", Toast.LENGTH_SHORT)
-                                .show()
-                        }
-
-                        "Pointing_Down" -> {
-                            sendCommand("/s/t/dec/0A")
-                            Toast.makeText(requireContext(), "Temperatura -10", Toast.LENGTH_SHORT)
-                                .show()
-                        }
-
-                        else -> {
-                            Toast.makeText(
-                                requireContext(),
-                                "Nieznany gest: ${category.categoryName()}",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
+                        binding.textScore.text = String.format(Locale.US, "%.2f", it.score())
                     }
-                    binding.textScore.text = String.format(Locale.US, "%.2f", category.score())
-                } else {
+                } ?: run {
                     binding.textLabel.text = "--"
                     binding.textScore.text = "--"
                 }
