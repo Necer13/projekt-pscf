@@ -22,10 +22,14 @@ import okhttp3.Response
 import pl.polsl.simon_go_manager.GestureRecognizerHelper
 import pl.polsl.simon_go_manager.databinding.FragmentGestureRecognitionBinding
 import java.io.IOException
+import java.security.cert.X509Certificate
 import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 
 class GestureRecognitionFragment : Fragment(),
     GestureRecognizerHelper.GestureRecognizerListener {
@@ -163,24 +167,43 @@ class GestureRecognitionFragment : Fragment(),
         imageAnalyzer?.targetRotation = binding.previewView.display.rotation
     }
 
-    private fun sendCommand(command: String) {
-        val client = OkHttpClient()
+    private fun sendCommandHttps(command: String) {
+        try {
+            // Zaufanie dla self-signed cert
+            val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+                override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
+                override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
+                override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+            })
 
-        val url = "http://192.168.1.50$command"
+            val sslContext = SSLContext.getInstance("SSL")
+            sslContext.init(null, trustAllCerts, java.security.SecureRandom())
+            val sslSocketFactory = sslContext.socketFactory
 
-        val request = Request.Builder()
-            .url(url)
-            .build()
+            val client = OkHttpClient.Builder()
+                .sslSocketFactory(sslSocketFactory, trustAllCerts[0] as X509TrustManager)
+                .hostnameVerifier { _, _ -> true }
+                .build()
 
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                Log.e("GestureCommand", "Błąd: ${e.message}")
-            }
+            val url = "https://192.168.1.50$command"
 
-            override fun onResponse(call: Call, response: Response) {
-                Log.d("GestureCommand", "Odpowiedź: ${response.body?.string()}")
-            }
-        })
+            val request = Request.Builder()
+                .url(url)
+                .build()
+
+            client.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    Log.e("GestureCommand", "Błąd: ${e.message}")
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    Log.d("GestureCommand", "Odpowiedź: ${response.body?.string()}")
+                }
+            })
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private var lastCommandTime = 0L
@@ -200,27 +223,27 @@ class GestureRecognitionFragment : Fragment(),
                         binding.textLabel.text = it.categoryName()
                         when (it.categoryName()) {
                             "Thumb_Up" -> {
-                                sendCommand("/s/1")
+                                sendCommandHttps("/s/1")
                                 Toast.makeText(binding.root.context, "Włącz oba przekaźniki", Toast.LENGTH_SHORT).show()
                             }
                             "Thumb_Down" -> {
-                                sendCommand("/s/0")
+                                sendCommandHttps("/s/0")
                                 Toast.makeText(binding.root.context, "Wyłącz oba przekaźniki", Toast.LENGTH_SHORT).show()
                             }
                             "Victory" -> {
-                                sendCommand("/s/2")
+                                sendCommandHttps("/s/2")
                                 Toast.makeText(binding.root.context, "Zmień stan obu przekaźników", Toast.LENGTH_SHORT).show()
                             }
                             "Closed_Fist" -> {
-                                sendCommand("/s/dec/14")
+                                sendCommandHttps("/s/dec/14")
                                 Toast.makeText(binding.root.context, "Jasność -20", Toast.LENGTH_SHORT).show()
                             }
                             "Pointing_Up" -> {
-                                sendCommand("/s/t/inc/0A")
+                                sendCommandHttps("/s/t/inc/0A")
                                 Toast.makeText(binding.root.context, "Temperatura +10", Toast.LENGTH_SHORT).show()
                             }
                             "Pointing_Down" -> {
-                                sendCommand("/s/t/dec/0A")
+                                sendCommandHttps("/s/t/dec/0A")
                                 Toast.makeText(binding.root.context, "Temperatura -10", Toast.LENGTH_SHORT).show()
                             }
                             else -> {
