@@ -14,8 +14,14 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import com.google.mediapipe.tasks.vision.core.RunningMode
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
 import pl.polsl.simon_go_manager.GestureRecognizerHelper
 import pl.polsl.simon_go_manager.databinding.FragmentGestureRecognitionBinding
+import java.io.IOException
 import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -157,6 +163,26 @@ class GestureRecognitionFragment : Fragment(),
         imageAnalyzer?.targetRotation = binding.previewView.display.rotation
     }
 
+    private fun sendCommand(command: String) {
+        val client = OkHttpClient()
+
+        val url = "http://192.168.1.50$command"
+
+        val request = Request.Builder()
+            .url(url)
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e("GestureCommand", "Błąd: ${e.message}")
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                Log.d("GestureCommand", "Odpowiedź: ${response.body?.string()}")
+            }
+        })
+    }
+
     override fun onResults(resultBundle: GestureRecognizerHelper.ResultBundle) {
         activity?.runOnUiThread {
             if (_binding != null) {
@@ -165,13 +191,60 @@ class GestureRecognitionFragment : Fragment(),
 
                 if (category != null) {
                     binding.textLabel.text = category.categoryName()
-                    //mozliwe categoryName() to
-                    //Thumb_Up
-                    //Thumb_Down
-                    //Victory
-                    //Closed_Fist
-                    //Open_Palm
-                    //Pointing_Up
+                    when (category.categoryName()) {
+                        "Thumb_Up" -> {
+                            sendCommand("/s/1")
+                            Toast.makeText(
+                                requireContext(),
+                                "Włącz oba przekaźniki",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
+                        "Thumb_Down" -> {
+                            sendCommand("/s/0")
+                            Toast.makeText(
+                                requireContext(),
+                                "Wyłącz oba przekaźniki",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
+                        "Victory" -> {
+                            sendCommand("/s/2")
+                            Toast.makeText(
+                                requireContext(),
+                                "Zmień stan obu przekaźników",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+
+                        "Closed_Fist" -> {
+                            sendCommand("/s/dec/14")
+                            Toast.makeText(requireContext(), "Jasność -20", Toast.LENGTH_SHORT)
+                                .show()
+                        }
+
+                        "Pointing_Up" -> {
+                            sendCommand("/s/t/inc/0A")
+                            Toast.makeText(requireContext(), "Temperatura +10", Toast.LENGTH_SHORT)
+                                .show()
+                        }
+
+                        "Pointing_Down" -> {
+                            sendCommand("/s/t/dec/0A")
+                            Toast.makeText(requireContext(), "Temperatura -10", Toast.LENGTH_SHORT)
+                                .show()
+                        }
+
+                        else -> {
+                            Toast.makeText(
+                                requireContext(),
+                                "Nieznany gest: ${category.categoryName()}",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
                     binding.textScore.text = String.format(Locale.US, "%.2f", category.score())
                 } else {
                     binding.textLabel.text = "--"
