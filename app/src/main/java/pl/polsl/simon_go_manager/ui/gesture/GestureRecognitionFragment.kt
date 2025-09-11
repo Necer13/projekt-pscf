@@ -187,7 +187,7 @@ class GestureRecognitionFragment : Fragment(),
                 .hostnameVerifier { _, _ -> true }
                 .build()
 
-            val url = "https://192.168.1.50$command"
+            val url = "http://192.168.1.162$command"
 
             val request = Request.Builder()
                 .url(url)
