@@ -21,6 +21,7 @@ import okhttp3.Request
 import okhttp3.Response
 import pl.polsl.simon_go_manager.GestureRecognizerHelper
 import pl.polsl.simon_go_manager.databinding.FragmentGestureRecognitionBinding
+import pl.polsl.simon_go_manager.data.GestureConfigManager
 import java.io.IOException
 import java.security.cert.X509Certificate
 import java.util.*
@@ -51,6 +52,7 @@ class GestureRecognitionFragment : Fragment(),
     private var cameraFacing = CameraSelector.LENS_FACING_FRONT
 
     private lateinit var backgroundExecutor: ExecutorService
+    private lateinit var gestureConfigManager: GestureConfigManager
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -66,6 +68,7 @@ class GestureRecognitionFragment : Fragment(),
         super.onViewCreated(view, savedInstanceState)
 
         backgroundExecutor = Executors.newSingleThreadExecutor()
+        gestureConfigManager = GestureConfigManager(requireContext())
 
         binding.previewView.post {
             setUpCamera()
@@ -169,7 +172,6 @@ class GestureRecognitionFragment : Fragment(),
 
     private fun sendCommandHttps(command: String) {
         try {
-            // Zaufanie dla self-signed cert
             val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
                 override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
                 override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
@@ -221,35 +223,14 @@ class GestureRecognitionFragment : Fragment(),
                         lastCommandTime = currentTime
 
                         binding.textLabel.text = it.categoryName()
-                        when (it.categoryName()) {
-                            "Thumb_Up" -> {
-                                sendCommandHttps("/s/1")
-                                Toast.makeText(binding.root.context, "Włącz oba przekaźniki", Toast.LENGTH_SHORT).show()
-                            }
-                            "Thumb_Down" -> {
-                                sendCommandHttps("/s/0")
-                                Toast.makeText(binding.root.context, "Wyłącz oba przekaźniki", Toast.LENGTH_SHORT).show()
-                            }
-                            "Victory" -> {
-                                sendCommandHttps("/s/2")
-                                Toast.makeText(binding.root.context, "Zmień stan obu przekaźników", Toast.LENGTH_SHORT).show()
-                            }
-                            "Closed_Fist" -> {
-                                sendCommandHttps("/s/dec/14")
-                                Toast.makeText(binding.root.context, "Jasność -20", Toast.LENGTH_SHORT).show()
-                            }
-                            "Pointing_Up" -> {
-                                sendCommandHttps("/s/t/inc/0A")
-                                Toast.makeText(binding.root.context, "Temperatura +10", Toast.LENGTH_SHORT).show()
-                            }
-                            "Pointing_Down" -> {
-                                sendCommandHttps("/s/t/dec/0A")
-                                Toast.makeText(binding.root.context, "Temperatura -10", Toast.LENGTH_SHORT).show()
-                            }
-                            else -> {
-                                Toast.makeText(binding.root.context, "Nieznany gest: ${it.categoryName()}", Toast.LENGTH_SHORT).show()
-                            }
+                        val action = gestureConfigManager.getGestureAction(it.categoryName())
+                        if (action != null) {
+                            sendCommandHttps(action.command)
+                            Toast.makeText(binding.root.context, action.description, Toast.LENGTH_SHORT).show()
+                        } else {
+                            Toast.makeText(binding.root.context, "Nieznany gest: ${it.categoryName()}", Toast.LENGTH_SHORT).show()
                         }
+
                         binding.textScore.text = String.format(Locale.US, "%.2f", it.score())
                     }
                 } ?: run {

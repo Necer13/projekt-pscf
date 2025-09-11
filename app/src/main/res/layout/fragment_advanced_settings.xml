@@ -15,26 +15,44 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Add your views here -->
             <TextView
-                android:id="@+id/example_textview"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Configuration"
-                android:layout_marginBottom="8dp"/>
+                android:text="Przypisz gest do akcji"
+                android:layout_marginBottom="8dp" />
+
+            <Spinner
+                android:id="@+id/gesture_spinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp" />
+
+            <Spinner
+                android:id="@+id/action_spinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp" />
 
             <Button
-                android:id="@+id/export_config_button"
+                android:id="@+id/save_mapping_button"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Export configuration"/>
-            <Button
-                android:id="@+id/import_config_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Import configuration"/>
+                android:text="Save mapping"
+                android:layout_marginTop="8dp" />
 
-            <!-- You can add more views as needed -->
+            <Button
+                android:id="@+id/show_mappings_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Show all mappings"
+                android:layout_marginTop="8dp" />
+
+            <TextView
+                android:id="@+id/mapping_textView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="No mappings yet" />
 
         </LinearLayout>
     </ScrollView>
