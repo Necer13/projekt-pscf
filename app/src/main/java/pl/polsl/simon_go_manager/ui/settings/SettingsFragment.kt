@@ -8,6 +8,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.navigation.fragment.findNavController
+import androidx.preference.EditTextPreference
 import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
@@ -17,6 +18,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.root_preferences, rootKey)
+        val usernamePref = findPreference<EditTextPreference>("username")
+        usernamePref?.summaryProvider = EditTextPreference.SimpleSummaryProvider.getInstance()
         val themePref = findPreference<ListPreference>("app_theme")
         themePref?.setOnPreferenceChangeListener { _, newValue ->
             val mode = when (newValue as String) {

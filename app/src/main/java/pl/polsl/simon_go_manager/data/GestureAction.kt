@@ -36,14 +36,14 @@ object DefaultActions {
         DefaultActions("/s/1", "Włącz termostat"),
         DefaultActions("/s/1/t/2150", "Ustaw temperaturę 21.5°C"),
         DefaultActions("/s/1/t/2000", "Ustaw temperaturę 20.0°C"),
-        DefaultActions("/s/t/inc/0A", "Temperatura +1°C"),
-        DefaultActions("/s/t/dec/0A", "Temperatura -1°C"),
+        DefaultActions("/s/t/inc/50", "Temperatura +0.5°C"),
+        DefaultActions("/s/t/dec/50", "Temperatura -0.5°C"),
         DefaultActions("/s/3", "Tryb BOOST – szybkie grzanie")
     )
     fun getActionsForDeviceType(type: DeviceType): List<DefaultActions> {
         return when (type) {
             DeviceType.SWITCH_D -> actions.filter { it.command.startsWith("/s/") && !it.command.contains("t") }
-            DeviceType.DIMMER -> actions.filter { it.description.contains("Jasność") || it.command.contains("inc") || it.command.contains("dec") }
+            DeviceType.DIMMER -> actions.filter { it.description.contains("Jasność") || it.description.contains("jasność") }
             DeviceType.THERMOSTAT -> actions.filter { it.command.contains("t") || it.description.contains("termostat") || it.description.contains("BOOST") }
         }
     }

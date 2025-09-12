@@ -29,14 +29,14 @@ class AdvancedSettingsFragment : Fragment() {
     private lateinit var gestureConfigManager: GestureConfigManager
     private lateinit var devices: MutableList<Device>
 
-    // Lista gestów
-    private val gestures = listOf(
-        "Thumb_Up",
-        "Thumb_Down",
-        "Victory",
-        "Closed_Fist",
-        "Pointing_Up",
-        "Pointing_Down"
+    // Lista gestów: pierwsze = klucz wewnętrzny, drugie = nazwa do pokazania w UI
+    private val gesturesList = listOf(
+        "Thumb_Up" to "Kciuk w górę",
+        "Thumb_Down" to "Kciuk w dół",
+        "Victory" to "Zwycięstwo (V)",
+        "Closed_Fist" to "Zaciśnięta pięść",
+        "Pointing_Up" to "Wskazanie w górę",
+        "Open_Palm" to "Otwarta dłoń"
     )
 
     override fun onCreateView(
@@ -58,20 +58,26 @@ class AdvancedSettingsFragment : Fragment() {
     }
 
     private fun setupSpinners() {
-        // Gesty
-        val gestureAdapter = ArrayAdapter(requireContext(),
-            android.R.layout.simple_spinner_item, gestures)
+        // Spinner dla gestów (pokazujemy nazwy po polsku)
+        val gestureAdapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_spinner_item,
+            gesturesList.map { it.second }
+        )
         gestureAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.gestureSpinner.adapter = gestureAdapter
 
-        // Urządzenia
+        // Spinner dla urządzeń
         val deviceNames = devices.map { it.name }
-        val deviceAdapter = ArrayAdapter(requireContext(),
-            android.R.layout.simple_spinner_item, deviceNames)
+        val deviceAdapter = ArrayAdapter(
+            requireContext(),
+            android.R.layout.simple_spinner_item,
+            deviceNames
+        )
         deviceAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         binding.deviceSpinner.adapter = deviceAdapter
 
-        // Aktualizowanie akcji przy zmianie urządzenia
+        // Po wyborze urządzenia ustaw spinner akcji
         binding.deviceSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(
                 parent: AdapterView<*>, view: View?, position: Int, id: Long
@@ -91,9 +97,12 @@ class AdvancedSettingsFragment : Fragment() {
     }
 
     private fun setupButtons() {
-        // Zapisz powiązanie
+        // Zapis mapowania gest → akcja
         binding.saveMappingButton.setOnClickListener {
-            val selectedGesture = gestures[binding.gestureSpinner.selectedItemPosition]
+            val selectedIndex = binding.gestureSpinner.selectedItemPosition
+            val selectedGestureInternal = gesturesList[selectedIndex].first
+            val selectedGestureDisplayName = gesturesList[selectedIndex].second
+
             val selectedDevice = devices[binding.deviceSpinner.selectedItemPosition]
             val actions = getActionsForDevice(selectedDevice)
             val selectedAction = actions[binding.actionSpinner.selectedItemPosition]
@@ -104,17 +113,17 @@ class AdvancedSettingsFragment : Fragment() {
                 ipAddress = selectedDevice.ipAddress
             )
 
-            gestureConfigManager.saveGestureAction(selectedGesture, gestureAction)
+            gestureConfigManager.saveGestureAction(selectedGestureInternal, gestureAction)
 
             Toast.makeText(
                 requireContext(),
-                "Zapisano: $selectedGesture → ${selectedDevice.name} (${selectedAction.description})",
+                "Zapisano: $selectedGestureDisplayName → ${selectedDevice.name} (${selectedAction.description})",
                 Toast.LENGTH_SHORT
             ).show()
             refreshMappings()
         }
 
-        // Eksport
+        // Eksport konfiguracji gestów
         binding.exportButton.setOnClickListener {
             val data = JSONObject(gestureConfigManager.getAllGestures().mapValues {
                 JSONObject().apply {
@@ -132,7 +141,7 @@ class AdvancedSettingsFragment : Fragment() {
             startActivityForResult(intent, 1001)
         }
 
-        // Import
+        // Import konfiguracji gestów
         binding.importButton.setOnClickListener {
             val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                 addCategory(Intent.CATEGORY_OPENABLE)
@@ -156,11 +165,10 @@ class AdvancedSettingsFragment : Fragment() {
         }
 
         for ((gesture, action) in mappings) {
-            val row = LinearLayout(requireContext()).apply {
-                orientation = LinearLayout.HORIZONTAL
-            }
+            val displayName = gesturesList.firstOrNull { it.first == gesture }?.second ?: gesture
+            val row = LinearLayout(requireContext()).apply { orientation = LinearLayout.HORIZONTAL }
             val tv = TextView(requireContext()).apply {
-                text = "$gesture → ${action.description} [${action.ipAddress}${action.command}]"
+                text = "$displayName → ${action.description} [${action.ipAddress}${action.command}]"
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             }
             val btn = Button(requireContext()).apply {
@@ -182,7 +190,7 @@ class AdvancedSettingsFragment : Fragment() {
         val uri: Uri = data.data!!
 
         when (requestCode) {
-            1001 -> { // Eksport
+            1001 -> {
                 requireContext().contentResolver.openOutputStream(uri)?.use {
                     OutputStreamWriter(it).use { writer ->
                         val dataJson = JSONObject(gestureConfigManager.getAllGestures().mapValues {
@@ -196,7 +204,7 @@ class AdvancedSettingsFragment : Fragment() {
                     }
                 }
             }
-            1002 -> { // Import
+            1002 -> {
                 requireContext().contentResolver.openInputStream(uri)?.use { stream ->
                     val text = BufferedReader(InputStreamReader(stream)).readText()
                     val obj = JSONObject(text)

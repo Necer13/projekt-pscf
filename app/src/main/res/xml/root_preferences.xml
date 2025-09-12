@@ -2,8 +2,10 @@
 
     <EditTextPreference
         android:key="username"
-        android:summary="No username set"
-        android:title="Username" />
+        android:title="Username"
+        android:summary="%s"
+        android:defaultValue="" />
+
     <ListPreference
         android:key="app_theme"
         android:title="App theme"
@@ -11,8 +13,21 @@
         android:defaultValue="system"
         android:entries="@array/theme_options"
         android:entryValues="@array/theme_values" />
+
+    <SwitchPreferenceCompat
+        android:key="notifications_enabled"
+        android:title="Enable notifications"
+        android:summary="Receive notifications from the app"
+        android:defaultValue="true" />
+
+    <Preference
+        android:key="reset_password"
+        android:title="Reset password"
+        android:summary="Provide old password to change it" />
+
     <Preference
         android:key="advanced_settings"
         android:title="Advanced settings"
         android:summary="Password required" />
+
 </PreferenceScreen>
