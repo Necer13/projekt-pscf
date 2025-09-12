@@ -256,7 +256,14 @@ class GestureRecognitionFragment : Fragment(),
                     binding.textScore.text = String.format(Locale.US, "%.2f", it.score())
 
                     // reset cooldown po 5 sekundach
+
                     binding.textLabel.postDelayed({
+                        if (_binding == null) {
+                            // The view is destroyed, don't try to access UI elements.
+                            // Log an error or handle this gracefully.
+                            Log.d("GestureRecognitionFragment", "onResults called after view was destroyed.")
+                            return@postDelayed
+                        }
                         isCooldownActive = false
                         binding.textLabel.text = "--"
                         binding.textScore.text = "--"
