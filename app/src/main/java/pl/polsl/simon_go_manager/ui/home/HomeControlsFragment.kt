@@ -4,12 +4,22 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.*
+import android.widget.LinearLayout
+import android.widget.SeekBar
+import android.widget.Switch
+import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
+import okhttp3.*
 import pl.polsl.simon_go_manager.R
 import pl.polsl.simon_go_manager.ui.devices.Device
 import pl.polsl.simon_go_manager.ui.devices.DeviceType
 import pl.polsl.simon_go_manager.utils.DeviceStorage
+import java.io.IOException
+import java.security.cert.X509Certificate
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 
 class HomeControlsFragment : Fragment() {
 
@@ -45,14 +55,35 @@ class HomeControlsFragment : Fragment() {
 
             when (device.type) {
                 DeviceType.SWITCH_D -> {
-                    val toggle = Switch(context).apply {
-                        isChecked = device.value as? Boolean ?: false
-                        setOnCheckedChangeListener { _, isChecked ->
-                            device.value = isChecked
-                            saveDevices()
+                    val relayCount = 4
+                    val ip = device.ipAddress ?: "192.168.1.100"
+
+                    val states = (device.value as? MutableList<Boolean>)
+                        ?: MutableList(relayCount) { false }
+
+                    for (i in 0 until relayCount) {
+                        val switch = Switch(context).apply {
+                            text = "Przekaźnik ${i + 1}"
+                            isChecked = states[i]
+                            setOnCheckedChangeListener { _, isChecked ->
+                                states[i] = isChecked
+                                device.value = states
+                                saveDevices()
+
+                                val command = when (i) {
+                                    0 -> if (isChecked) "/s/0/1" else "/s/0/0"
+                                    1 -> if (isChecked) "/s/1/1" else "/s/1/0"
+                                    2 -> if (isChecked) "/s/2/1" else "/s/2/0"
+                                    3 -> if (isChecked) "/s/3/1" else "/s/3/0"
+                                    else -> ""
+                                }
+                                val url = "http://$ip$command"
+                                sendCommandHttps(ip, command)
+                                Toast.makeText(context, "Wysłano: $url", Toast.LENGTH_SHORT).show()
+                            }
                         }
+                        containerLayout.addView(switch)
                     }
-                    containerLayout.addView(toggle)
                 }
 
                 DeviceType.DIMMER -> {
@@ -69,6 +100,11 @@ class HomeControlsFragment : Fragment() {
                             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
                             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                                 saveDevices()
+                                val ip = device.ipAddress
+                                val command = "/s/$progress"
+                                val url = "http://$ip$command"
+                                sendCommandHttps(ip, command)
+                                Toast.makeText(context, "Wysłano: $url", Toast.LENGTH_SHORT).show()
                             }
                         })
                     }
@@ -91,6 +127,11 @@ class HomeControlsFragment : Fragment() {
                             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
                             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                                 saveDevices()
+                                val ip = device.ipAddress
+                                val command = "/s/1/t/${progress * 100}"
+                                val url = "http://$ip$command"
+                                sendCommandHttps(ip, command)
+                                Toast.makeText(context, "Wysłano: $url", Toast.LENGTH_SHORT).show()
                             }
                         })
                     }
@@ -104,5 +145,43 @@ class HomeControlsFragment : Fragment() {
 
     private fun saveDevices() {
         DeviceStorage.saveDevices(requireContext(), devices)
+    }
+
+    private fun sendCommandHttps(ip: String, command: String) {
+        try {
+            val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+                override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
+                override fun checkServerTrusted(chain: Array<X509Certificate>, authType: String) {}
+                override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+            })
+
+            val sslContext = SSLContext.getInstance("SSL")
+            sslContext.init(null, trustAllCerts, java.security.SecureRandom())
+            val sslSocketFactory = sslContext.socketFactory
+
+            val client = OkHttpClient.Builder()
+                .sslSocketFactory(sslSocketFactory, trustAllCerts[0] as X509TrustManager)
+                .hostnameVerifier { _, _ -> true }
+                .build()
+
+            val url = "http://$ip$command"
+
+            val request = Request.Builder()
+                .url(url)
+                .build()
+
+            client.newCall(request).enqueue(object : Callback {
+                override fun onFailure(call: Call, e: IOException) {
+                    e.printStackTrace()
+                }
+
+                override fun onResponse(call: Call, response: Response) {
+                    response.close()
+                }
+            })
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }
