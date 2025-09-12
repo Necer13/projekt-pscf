@@ -170,7 +170,7 @@ class GestureRecognitionFragment : Fragment(),
         imageAnalyzer?.targetRotation = binding.previewView.display.rotation
     }
 
-    private fun sendCommandHttps(command: String) {
+    private fun sendCommandHttps(ip: String, command: String) {
         try {
             val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
                 override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) {}
@@ -187,7 +187,7 @@ class GestureRecognitionFragment : Fragment(),
                 .hostnameVerifier { _, _ -> true }
                 .build()
 
-            val url = "http://192.168.1.162$command"
+            val url = "http://$ip$command"
 
             val request = Request.Builder()
                 .url(url)
@@ -208,6 +208,7 @@ class GestureRecognitionFragment : Fragment(),
         }
     }
 
+
     private var lastCommandTime = 0L
     private val COMMAND_COOLDOWN_MS = 1000L
 
@@ -225,11 +226,20 @@ class GestureRecognitionFragment : Fragment(),
                         binding.textLabel.text = it.categoryName()
                         val action = gestureConfigManager.getGestureAction(it.categoryName())
                         if (action != null) {
-                            sendCommandHttps(action.command)
-                            Toast.makeText(binding.root.context, action.description, Toast.LENGTH_SHORT).show()
+                            if (action.ipAddress.isBlank()) {
+                                Toast.makeText(binding.root.context, "Brak IP dla urządzenia!", Toast.LENGTH_SHORT).show()
+                                return@let
+                            }
+                            sendCommandHttps(action.ipAddress, action.command)
+                            Toast.makeText(
+                                binding.root.context,
+                                "${action.description} → ${action.ipAddress}${action.command}",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         } else {
                             Toast.makeText(binding.root.context, "Nieznany gest: ${it.categoryName()}", Toast.LENGTH_SHORT).show()
                         }
+
 
                         binding.textScore.text = String.format(Locale.US, "%.2f", it.score())
                     }
