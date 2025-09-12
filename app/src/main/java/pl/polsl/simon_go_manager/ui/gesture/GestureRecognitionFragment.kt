@@ -54,6 +54,9 @@ class GestureRecognitionFragment : Fragment(),
     private lateinit var backgroundExecutor: ExecutorService
     private lateinit var gestureConfigManager: GestureConfigManager
 
+    private var isCooldownActive = false
+    private val COMMAND_COOLDOWN_MS = 5000L // 5 sekund
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -208,41 +211,56 @@ class GestureRecognitionFragment : Fragment(),
         }
     }
 
-
-    private var lastCommandTime = 0L
-    private val COMMAND_COOLDOWN_MS = 1000L
-
     override fun onResults(resultBundle: GestureRecognizerHelper.ResultBundle) {
         activity?.runOnUiThread {
             if (_binding != null) {
+
+                if (isCooldownActive) {
+                    // ignorujemy wszystkie gesty podczas cooldownu
+                    binding.textLabel.text = "--"
+                    binding.textScore.text = "--"
+                    binding.overlay.setResults(
+                        resultBundle.results.first(),
+                        resultBundle.inputImageHeight,
+                        resultBundle.inputImageWidth,
+                        RunningMode.LIVE_STREAM
+                    )
+                    binding.overlay.invalidate()
+                    return@runOnUiThread
+                }
+
                 val gestures = resultBundle.results.first().gestures()
                 val category = gestures.firstOrNull()?.maxByOrNull { it.score() }
 
                 category?.let {
-                    val currentTime = System.currentTimeMillis()
-                    if (currentTime - lastCommandTime >= COMMAND_COOLDOWN_MS) {
-                        lastCommandTime = currentTime
+                    // start cooldown
+                    isCooldownActive = true
 
-                        binding.textLabel.text = it.categoryName()
-                        val action = gestureConfigManager.getGestureAction(it.categoryName())
-                        if (action != null) {
-                            if (action.ipAddress.isBlank()) {
-                                Toast.makeText(binding.root.context, "Brak IP dla urządzenia!", Toast.LENGTH_SHORT).show()
-                                return@let
-                            }
+                    binding.textLabel.text = it.categoryName()
+                    val action = gestureConfigManager.getGestureAction(it.categoryName())
+                    if (action != null) {
+                        if (action.ipAddress.isBlank()) {
+                            Toast.makeText(binding.root.context, "Brak IP dla urządzenia!", Toast.LENGTH_SHORT).show()
+                        } else {
                             sendCommandHttps(action.ipAddress, action.command)
                             Toast.makeText(
                                 binding.root.context,
                                 "${action.description} → ${action.ipAddress}${action.command}",
                                 Toast.LENGTH_SHORT
                             ).show()
-                        } else {
-                            Toast.makeText(binding.root.context, "Nieznany gest: ${it.categoryName()}", Toast.LENGTH_SHORT).show()
                         }
-
-
-                        binding.textScore.text = String.format(Locale.US, "%.2f", it.score())
+                    } else {
+                        Toast.makeText(binding.root.context, "Nieznany gest: ${it.categoryName()}", Toast.LENGTH_SHORT).show()
                     }
+
+                    binding.textScore.text = String.format(Locale.US, "%.2f", it.score())
+
+                    // reset cooldown po 5 sekundach
+                    binding.textLabel.postDelayed({
+                        isCooldownActive = false
+                        binding.textLabel.text = "--"
+                        binding.textScore.text = "--"
+                    }, COMMAND_COOLDOWN_MS)
                 } ?: run {
                     binding.textLabel.text = "--"
                     binding.textScore.text = "--"
